@@ -919,7 +919,7 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
   const city = document.getElementById('cityInput').value.trim();
   if (!city) return;
   closeModal();
-  document.getElementById('app').innerHTML = `<div class="loading"><div class="loading-spinner"></div><p>検索中...</p></div>`;
+  document.getElementById('app').innerHTML = `<div class="loading"><div class="loading-spinner"></div></div><div class="loading"><p>検索中...</p></div>`;
   try {
     const { lat, lon, name } = await geocodeCity(city);
     setCookie('wx_lat', lat, 30);
