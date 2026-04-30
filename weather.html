@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>天気</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@300;400;700&family=Montserrat:wght@200;300;400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-top: #1a1a2e;
+    --bg-bottom: #16213e;
+    --text: #ffffff;
+    --text-sub: rgba(255,255,255,0.65);
+    --card-bg: rgba(255,255,255,0.08);
+    --card-border: rgba(255,255,255,0.12);
+    --accent: rgba(255,255,255,0.9);
+    --transition: 2s ease;
+  }
+
+  body {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    min-height: 100vh;
+    color: var(--text);
+    overflow-x: hidden;
+    transition: background var(--transition);
+  }
+
+  /* ===== BACKGROUND ===== */
+  #bg {
+    position: fixed; inset: 0; z-index: 0;
+    background: linear-gradient(170deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+    transition: background 2s ease;
+  }
+
+  /* Sky layers */
+  .sky-layer {
+    position: fixed; inset: 0; z-index: 0;
+    pointer-events: none;
+    transition: opacity 2s ease;
+  }
+
+  /* Stars */
+  #stars {
+    background-image:
+      radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.8) 0%, transparent 100%),
+      radial-gradient(1px 1px at 30% 40%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 55% 10%, rgba(255,255,255,0.9) 0%, transparent 100%),
+      radial-gradient(1px 1px at 70% 60%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 85% 25%, rgba(255,255,255,0.7) 0%, transparent 100%),
+      radial-gradient(1px 1px at 20% 75%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 45% 85%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1px 1px at 92% 45%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 5% 50%, rgba(255,255,255,0.7) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 62% 30%, rgba(255,255,255,0.8) 0%, transparent 100%),
+      radial-gradient(1px 1px at 78% 80%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 38% 55%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1px 1px at 15% 90%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 90% 10%, rgba(255,255,255,0.8) 0%, transparent 100%),
+      radial-gradient(1px 1px at 50% 70%, rgba(255,255,255,0.3) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity 2s ease;
+  }
+
+  /* ===== SUN ===== */
+  .sun-wrap {
+    position: fixed; top: 8vh; right: 12vw;
+    z-index: 1; pointer-events: none;
+    opacity: 0; transition: opacity 2s ease;
+  }
+  .sun {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff9c4 0%, #ffeb3b 50%, #ff9800 100%);
+    box-shadow: 0 0 40px 20px rgba(255,235,59,0.35), 0 0 80px 40px rgba(255,152,0,0.15);
+    animation: sunPulse 4s ease-in-out infinite;
+  }
+  .sun-rays {
+    position: absolute; inset: -20px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,235,59,0.2) 40%, transparent 70%);
+    animation: sunPulse 4s ease-in-out infinite reverse;
+  }
+  @keyframes sunPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.08); opacity: 0.85; }
+  }
+
+  /* ===== MOON ===== */
+  .moon-wrap {
+    position: fixed; top: 8vh; right: 12vw;
+    z-index: 1; pointer-events: none;
+    opacity: 0; transition: opacity 2s ease;
+  }
+  .moon {
+    width: 70px; height: 70px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #e8e8e8, #b0b0b0);
+    box-shadow: 0 0 30px 10px rgba(200,200,255,0.2), inset -8px -8px 20px rgba(0,0,0,0.3);
+    animation: moonGlow 5s ease-in-out infinite;
+  }
+  @keyframes moonGlow {
+    0%, 100% { box-shadow: 0 0 30px 10px rgba(200,200,255,0.2), inset -8px -8px 20px rgba(0,0,0,0.3); }
+    50% { box-shadow: 0 0 50px 20px rgba(200,200,255,0.3), inset -8px -8px 20px rgba(0,0,0,0.3); }
+  }
+
+  /* ===== CLOUDS ===== */
+  .cloud-container {
+    position: fixed; inset: 0;
+    z-index: 1; pointer-events: none;
+    opacity: 0; transition: opacity 2s ease;
+    overflow: hidden;
+  }
+  .cloud {
+    position: absolute;
+    background: rgba(255,255,255,0.85);
+    border-radius: 50px;
+    animation: cloudFloat linear infinite;
+  }
+  .cloud::before, .cloud::after {
+    content: '';
+    position: absolute;
+    background: inherit;
+    border-radius: 50%;
+  }
+  .cloud-1 { width: 120px; height: 40px; top: 12%; animation-duration: 35s; animation-delay: 0s; }
+  .cloud-1::before { width: 60px; height: 60px; top: -30px; left: 15px; }
+  .cloud-1::after { width: 45px; height: 45px; top: -20px; left: 55px; }
+
+  .cloud-2 { width: 90px; height: 30px; top: 22%; animation-duration: 50s; animation-delay: -15s; opacity: 0.7; }
+  .cloud-2::before { width: 45px; height: 45px; top: -22px; left: 10px; }
+  .cloud-2::after { width: 35px; height: 35px; top: -15px; left: 40px; }
+
+  .cloud-3 { width: 150px; height: 45px; top: 18%; animation-duration: 42s; animation-delay: -25s; opacity: 0.9; }
+  .cloud-3::before { width: 70px; height: 70px; top: -35px; left: 20px; }
+  .cloud-3::after { width: 55px; height: 55px; top: -25px; left: 70px; }
+
+  .cloud-4 { width: 80px; height: 28px; top: 30%; animation-duration: 60s; animation-delay: -35s; opacity: 0.6; }
+  .cloud-4::before { width: 40px; height: 40px; top: -20px; left: 8px; }
+  .cloud-4::after { width: 30px; height: 30px; top: -12px; left: 35px; }
+
+  @keyframes cloudFloat {
+    from { transform: translateX(-220px); }
+    to { transform: translateX(110vw); }
+  }
+
+  /* ===== RAIN ===== */
+  .rain-container {
+    position: fixed; inset: 0;
+    z-index: 2; pointer-events: none;
+    opacity: 0; transition: opacity 1.5s ease;
+    overflow: hidden;
+  }
+  .raindrop {
+    position: absolute;
+    top: -20px;
+    width: 1.5px;
+    border-radius: 2px;
+    background: linear-gradient(to bottom, transparent, rgba(174,214,241,0.8));
+    animation: rainFall linear infinite;
+  }
+  @keyframes rainFall {
+    0% { transform: translateY(-20px); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 0.7; }
+    100% { transform: translateY(110vh); opacity: 0; }
+  }
+
+  /* ===== SNOW ===== */
+  .snow-container {
+    position: fixed; inset: 0;
+    z-index: 2; pointer-events: none;
+    opacity: 0; transition: opacity 1.5s ease;
+    overflow: hidden;
+  }
+  .snowflake {
+    position: absolute;
+    top: -10px;
+    color: white;
+    font-size: 1em;
+    animation: snowFall linear infinite;
+    opacity: 0.7;
+  }
+  @keyframes snowFall {
+    0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }
+    10% { opacity: 0.7; }
+    90% { opacity: 0.5; }
+    100% { transform: translateY(105vh) rotate(360deg); opacity: 0; }
+  }
+
+  /* ===== LAYOUT ===== */
+  #app {
+    position: relative; z-index: 10;
+    min-height: 100vh;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 20px 40px;
+    display: flex; flex-direction: column; gap: 20px;
+  }
+
+  /* Header */
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: 52px;
+  }
+  .location-info h1 {
+    font-size: 1.5rem; font-weight: 700; letter-spacing: 0.02em;
+    line-height: 1.2;
+  }
+  .location-info p {
+    font-size: 0.78rem; color: var(--text-sub);
+    margin-top: 3px;
+    font-family: 'Montserrat', sans-serif; font-weight: 300;
+  }
+  .location-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    color: var(--text);
+    border-radius: 50px;
+    padding: 8px 16px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .location-btn:hover { background: rgba(255,255,255,0.15); }
+
+  /* Current weather card */
+  .current-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--card-border);
+    border-radius: 28px;
+    padding: 32px 28px 28px;
+    display: flex; flex-direction: column; align-items: center;
+    text-align: center;
+    gap: 4px;
+    animation: fadeUp 0.8s ease both;
+  }
+  .weather-icon-large {
+    font-size: 4.5rem; line-height: 1;
+    margin-bottom: 8px;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2));
+  }
+  .temp-main {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 5.5rem; font-weight: 200;
+    line-height: 1; letter-spacing: -0.03em;
+  }
+  .weather-desc {
+    font-size: 1rem; color: var(--text-sub);
+    font-weight: 300; margin-top: 4px;
+  }
+  .feels-like {
+    font-size: 0.8rem; color: var(--text-sub);
+    font-family: 'Montserrat', sans-serif; font-weight: 300;
+  }
+  .temp-range {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.88rem; font-weight: 300;
+    color: var(--text-sub); margin-top: 4px;
+    letter-spacing: 0.05em;
+  }
+
+  /* Details grid */
+  .details-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    animation: fadeUp 0.8s 0.1s ease both;
+  }
+  .detail-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 18px 20px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .detail-label {
+    font-size: 0.72rem; color: var(--text-sub);
+    text-transform: uppercase; letter-spacing: 0.1em;
+    font-family: 'Montserrat', sans-serif; font-weight: 400;
+  }
+  .detail-value {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.6rem; font-weight: 300;
+  }
+  .detail-unit {
+    font-size: 0.75rem; color: var(--text-sub);
+    font-family: 'Montserrat', sans-serif; font-weight: 300;
+  }
+  .detail-icon { font-size: 1.3rem; margin-bottom: 2px; }
+
+  /* Hourly forecast */
+  .section-title {
+    font-size: 0.72rem; color: var(--text-sub);
+    text-transform: uppercase; letter-spacing: 0.12em;
+    font-family: 'Montserrat', sans-serif; font-weight: 400;
+    padding: 0 4px;
+  }
+  .hourly-scroll {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 16px 8px;
+    display: flex; gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+  .hourly-scroll::-webkit-scrollbar { display: none; }
+  .hourly-item {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 6px;
+    padding: 10px 10px;
+    border-radius: 14px;
+    min-width: 54px;
+    transition: background 0.2s;
+    cursor: default;
+  }
+  .hourly-item.now {
+    background: rgba(255,255,255,0.15);
+  }
+  .hourly-time {
+    font-size: 0.7rem; color: var(--text-sub);
+    font-family: 'Montserrat', sans-serif; font-weight: 300;
+    white-space: nowrap;
+  }
+  .hourly-icon { font-size: 1.3rem; }
+  .hourly-temp {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.88rem; font-weight: 400;
+  }
+
+  /* Weekly forecast */
+  .weekly-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    overflow: hidden;
+    animation: fadeUp 0.8s 0.3s ease both;
+  }
+  .weekly-row {
+    display: flex; align-items: center;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--card-border);
+    transition: background 0.2s;
+  }
+  .weekly-row:last-child { border-bottom: none; }
+  .weekly-day {
+    font-size: 0.88rem; font-weight: 400;
+    flex: 1;
+  }
+  .weekly-icon { font-size: 1.4rem; flex: 0 0 36px; text-align: center; }
+  .weekly-precip {
+    font-size: 0.72rem; color: #7ec8e3;
+    font-family: 'Montserrat', sans-serif;
+    flex: 0 0 38px; text-align: center;
+  }
+  .weekly-temps {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.9rem; font-weight: 300;
+    display: flex; gap: 8px;
+    flex: 0 0 80px; justify-content: flex-end;
+  }
+  .temp-high { color: var(--text); }
+  .temp-low { color: var(--text-sub); }
+
+  /* Location modal */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: rgba(20,25,40,0.95);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 24px;
+    padding: 28px 24px;
+    width: 100%; max-width: 360px;
+    animation: scaleIn 0.25s ease;
+  }
+  @keyframes scaleIn {
+    from { transform: scale(0.92); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .modal h2 { font-size: 1.1rem; margin-bottom: 16px; }
+  .modal-btn {
+    width: 100%; padding: 14px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 14px;
+    color: white; font-size: 0.9rem;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    cursor: pointer; text-align: left;
+    margin-bottom: 10px;
+    transition: background 0.2s;
+  }
+  .modal-btn:hover { background: rgba(255,255,255,0.18); }
+  .modal-input {
+    width: 100%; padding: 13px 16px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 14px;
+    color: white; font-size: 0.9rem;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    margin-bottom: 10px; outline: none;
+  }
+  .modal-input::placeholder { color: rgba(255,255,255,0.35); }
+  .modal-close {
+    width: 100%; padding: 12px;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    color: var(--text-sub); font-size: 0.85rem;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    cursor: pointer; margin-top: 6px;
+    transition: background 0.2s;
+  }
+  .modal-close:hover { background: rgba(255,255,255,0.06); }
+
+  /* Loading & Error */
+  .loading {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 80vh; gap: 20px;
+    animation: fadeUp 0.5s ease;
+  }
+  .loading-spinner {
+    width: 44px; height: 44px;
+    border: 2px solid rgba(255,255,255,0.15);
+    border-top-color: rgba(255,255,255,0.8);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading p { color: var(--text-sub); font-size: 0.9rem; }
+  .error-msg {
+    text-align: center; padding: 40px 20px;
+    color: var(--text-sub); font-size: 0.9rem;
+    line-height: 1.7;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* PC layout */
+  @media (min-width: 640px) {
+    #app { max-width: 560px; }
+    .details-grid { grid-template-columns: repeat(4, 1fr); }
+    .detail-value { font-size: 1.4rem; }
+    .temp-main { font-size: 6.5rem; }
+    .weather-icon-large { font-size: 5.5rem; }
+  }
+
+  @media (min-width: 1024px) {
+    #app {
+      max-width: 900px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto;
+      column-gap: 24px;
+      padding-top: 0;
+    }
+    .header { grid-column: 1 / -1; padding-top: 60px; }
+    .current-card { grid-column: 1; }
+    .details-grid { grid-column: 2; grid-template-columns: 1fr 1fr; align-content: start; }
+    .hourly-wrap { grid-column: 1 / -1; }
+    .weekly-wrap { grid-column: 1 / -1; }
+  }
+</style>
+</head>
+<body>
+
+<div id="bg"></div>
+<div class="sky-layer" id="stars"></div>
+
+<!-- Sun -->
+<div class="sun-wrap" id="sunWrap">
+  <div class="sun-rays"></div>
+  <div class="sun"></div>
+</div>
+
+<!-- Moon -->
+<div class="moon-wrap" id="moonWrap">
+  <div class="moon"></div>
+</div>
+
+<!-- Clouds -->
+<div class="cloud-container" id="cloudContainer">
+  <div class="cloud cloud-1" style="left:-150px"></div>
+  <div class="cloud cloud-2" style="left:-100px"></div>
+  <div class="cloud cloud-3" style="left:-200px"></div>
+  <div class="cloud cloud-4" style="left:-120px"></div>
+</div>
+
+<!-- Rain -->
+<div class="rain-container" id="rainContainer"></div>
+
+<!-- Snow -->
+<div class="snow-container" id="snowContainer"></div>
+
+<!-- App -->
+<div id="app">
+  <div class="loading" id="loadingState">
+    <div class="loading-spinner"></div>
+    <p>位置情報を取得中...</p>
+  </div>
+</div>
+
+<!-- Location modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2>場所を選択</h2>
+    <button class="modal-btn" id="geoBtn">📍 現在地を使用</button>
+    <input class="modal-input" id="cityInput" type="text" placeholder="都市名を入力（例：大阪）" />
+    <button class="modal-btn" id="searchBtn">🔍 検索</button>
+    <button class="modal-close" id="modalClose">キャンセル</button>
+  </div>
+</div>
+
+<script>
+// ===== GEOCODING & WEATHER API =====
+const GEO_API = 'https://geocoding-api.open-meteo.com/v1/search';
+const WEATHER_API = 'https://api.open-meteo.com/v1/forecast';
+
+// WMO weather code mapping
+const WMO = {
+  0: { label: '快晴', icon: '☀️' },
+  1: { label: 'ほぼ晴れ', icon: '🌤️' },
+  2: { label: '一部曇り', icon: '⛅' },
+  3: { label: '曇り', icon: '☁️' },
+  45: { label: '霧', icon: '🌫️' },
+  48: { label: '霧氷', icon: '🌫️' },
+  51: { label: '霧雨（弱）', icon: '🌦️' },
+  53: { label: '霧雨', icon: '🌦️' },
+  55: { label: '霧雨（強）', icon: '🌧️' },
+  61: { label: '小雨', icon: '🌧️' },
+  63: { label: '雨', icon: '🌧️' },
+  65: { label: '大雨', icon: '🌧️' },
+  71: { label: '小雪', icon: '🌨️' },
+  73: { label: '雪', icon: '❄️' },
+  75: { label: '大雪', icon: '❄️' },
+  77: { label: '霰', icon: '🌨️' },
+  80: { label: 'にわか雨（弱）', icon: '🌦️' },
+  81: { label: 'にわか雨', icon: '🌧️' },
+  82: { label: 'にわか雨（強）', icon: '⛈️' },
+  85: { label: 'にわか雪', icon: '🌨️' },
+  86: { label: '大雪（にわか）', icon: '❄️' },
+  95: { label: '雷雨', icon: '⛈️' },
+  96: { label: '雹を伴う雷雨', icon: '⛈️' },
+  99: { label: '大雹を伴う雷雨', icon: '⛈️' },
+};
+
+function wmo(code) {
+  return WMO[code] || { label: '不明', icon: '🌡️' };
+}
+
+// ===== THEME =====
+const THEMES = {
+  clearDay: {
+    bgTop: '#1565C0', bgBottom: '#42A5F5',
+    sun: true, moon: false, clouds: false, rain: false, snow: false, stars: false,
+  },
+  clearNight: {
+    bgTop: '#0d1b3e', bgBottom: '#1a237e',
+    sun: false, moon: true, clouds: false, rain: false, snow: false, stars: true,
+  },
+  cloudyDay: {
+    bgTop: '#546E7A', bgBottom: '#90A4AE',
+    sun: false, moon: false, clouds: true, rain: false, snow: false, stars: false,
+  },
+  cloudyNight: {
+    bgTop: '#1c2331', bgBottom: '#37474F',
+    sun: false, moon: false, clouds: true, rain: false, snow: false, stars: false,
+  },
+  rainDay: {
+    bgTop: '#37474F', bgBottom: '#546E7A',
+    sun: false, moon: false, clouds: true, rain: true, snow: false, stars: false,
+  },
+  rainNight: {
+    bgTop: '#1a1f2e', bgBottom: '#263238',
+    sun: false, moon: false, clouds: true, rain: true, snow: false, stars: false,
+  },
+  snowDay: {
+    bgTop: '#78909C', bgBottom: '#B0BEC5',
+    sun: false, moon: false, clouds: true, rain: false, snow: true, stars: false,
+  },
+  snowNight: {
+    bgTop: '#1e2a35', bgBottom: '#37474F',
+    sun: false, moon: false, clouds: true, rain: false, snow: true, stars: false,
+  },
+  sunrise: {
+    bgTop: '#FF8F00', bgBottom: '#FFCC80',
+    sun: true, moon: false, clouds: false, rain: false, snow: false, stars: false,
+  },
+  sunset: {
+    bgTop: '#BF360C', bgBottom: '#FF8F00',
+    sun: true, moon: false, clouds: false, rain: false, snow: false, stars: false,
+  },
+};
+
+function getTheme(code, isDay, hour) {
+  const isRain = [51,53,55,61,63,65,80,81,82,95,96,99].includes(code);
+  const isSnow = [71,73,75,77,85,86].includes(code);
+  const isCloudy = [2,3,45,48].includes(code);
+
+  if (hour === 6 || hour === 7) return THEMES.sunrise;
+  if (hour === 18 || hour === 19) return THEMES.sunset;
+  if (isSnow) return isDay ? THEMES.snowDay : THEMES.snowNight;
+  if (isRain) return isDay ? THEMES.rainDay : THEMES.rainNight;
+  if (isCloudy) return isDay ? THEMES.cloudyDay : THEMES.cloudyNight;
+  return isDay ? THEMES.clearDay : THEMES.clearNight;
+}
+
+function applyTheme(theme) {
+  document.getElementById('bg').style.background =
+    `linear-gradient(170deg, ${theme.bgTop} 0%, ${theme.bgBottom} 100%)`;
+  document.getElementById('sunWrap').style.opacity = theme.sun ? '1' : '0';
+  document.getElementById('moonWrap').style.opacity = theme.moon ? '1' : '0';
+  document.getElementById('cloudContainer').style.opacity = theme.clouds ? '1' : '0';
+  document.getElementById('rainContainer').style.opacity = theme.rain ? '1' : '0';
+  document.getElementById('snowContainer').style.opacity = theme.snow ? '1' : '0';
+  document.getElementById('stars').style.opacity = theme.stars ? '1' : '0';
+}
+
+// ===== RAIN GENERATION =====
+function generateRain() {
+  const container = document.getElementById('rainContainer');
+  container.innerHTML = '';
+  for (let i = 0; i < 80; i++) {
+    const drop = document.createElement('div');
+    drop.className = 'raindrop';
+    const height = 15 + Math.random() * 25;
+    drop.style.cssText = `
+      left: ${Math.random() * 110}%;
+      height: ${height}px;
+      animation-duration: ${0.6 + Math.random() * 0.8}s;
+      animation-delay: ${Math.random() * 2}s;
+      opacity: ${0.4 + Math.random() * 0.5};
+    `;
+    container.appendChild(drop);
+  }
+}
+
+function generateSnow() {
+  const container = document.getElementById('snowContainer');
+  container.innerHTML = '';
+  const flakes = ['❄','❅','❆','·','•'];
+  for (let i = 0; i < 40; i++) {
+    const f = document.createElement('div');
+    f.className = 'snowflake';
+    f.textContent = flakes[Math.floor(Math.random() * flakes.length)];
+    const size = 0.6 + Math.random() * 1.2;
+    f.style.cssText = `
+      left: ${Math.random() * 105}%;
+      font-size: ${size}em;
+      animation-duration: ${3 + Math.random() * 5}s;
+      animation-delay: ${Math.random() * 4}s;
+      opacity: ${0.4 + Math.random() * 0.5};
+    `;
+    container.appendChild(f);
+  }
+}
+
+generateRain();
+generateSnow();
+
+// ===== DATE/TIME HELPERS =====
+const DAYS = ['日','月','火','水','木','金','土'];
+function formatDate(dateStr) {
+  const d = new Date(dateStr);
+  return `${d.getMonth()+1}月${d.getDate()}日（${DAYS[d.getDay()]}）`;
+}
+function formatHour(isoStr) {
+  const d = new Date(isoStr);
+  const h = d.getHours();
+  if (h === 0) return '深夜0時';
+  if (h === 12) return '正午';
+  return h < 12 ? `午前${h}時` : `午後${h-12}時`;
+}
+function directionLabel(deg) {
+  const dirs = ['北','北北東','北東','東北東','東','東南東','南東','南南東','南','南南西','南西','西南西','西','西北西','北西','北北西'];
+  return dirs[Math.round(deg / 22.5) % 16];
+}
+function getUVLabel(uv) {
+  if (uv <= 2) return '低い';
+  if (uv <= 5) return '中程度';
+  if (uv <= 7) return '高い';
+  if (uv <= 10) return '非常に高い';
+  return '極端';
+}
+
+// ===== COOKIE =====
+function setCookie(name, val, days) {
+  const d = new Date(); d.setTime(d.getTime() + days*24*60*60*1000);
+  document.cookie = `${name}=${encodeURIComponent(val)};expires=${d.toUTCString()};path=/`;
+}
+function getCookie(name) {
+  const v = document.cookie.split(';').find(c => c.trim().startsWith(name+'='));
+  return v ? decodeURIComponent(v.split('=')[1]) : null;
+}
+
+// ===== WEATHER FETCH =====
+async function fetchWeather(lat, lon, locationName) {
+  const params = new URLSearchParams({
+    latitude: lat, longitude: lon,
+    current: 'temperature_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,relative_humidity_2m,is_day,uv_index,precipitation',
+    hourly: 'temperature_2m,weather_code,precipitation_probability',
+    daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset',
+    timezone: 'auto', forecast_days: 8,
+    wind_speed_unit: 'ms',
+  });
+
+  const res = await fetch(`${WEATHER_API}?${params}`);
+  if (!res.ok) throw new Error('Weather API error');
+  const data = await res.json();
+  renderWeather(data, locationName);
+}
+
+async function geocodeCity(city) {
+  const res = await fetch(`${GEO_API}?name=${encodeURIComponent(city)}&count=1&language=ja`);
+  const data = await res.json();
+  if (!data.results?.length) throw new Error('not found');
+  const { latitude, longitude, name, admin1, country } = data.results[0];
+  const label = admin1 ? `${name}、${admin1}` : name;
+  return { lat: latitude, lon: longitude, name: label };
+}
+
+// ===== RENDER =====
+function renderWeather(data, locationName) {
+  const c = data.current;
+  const hourly = data.hourly;
+  const daily = data.daily;
+
+  const code = c.weather_code;
+  const isDay = c.is_day === 1;
+  const now = new Date();
+  const hour = now.getHours();
+  const theme = getTheme(code, isDay, hour);
+  applyTheme(theme);
+
+  const nowIdx = hourly.time.findIndex(t => new Date(t) >= now);
+  const startIdx = Math.max(0, nowIdx - 1);
+
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <!-- Header -->
+    <div class="header">
+      <div class="location-info">
+        <h1>${locationName}</h1>
+        <p>${now.getMonth()+1}月${now.getDate()}日（${DAYS[now.getDay()]}）${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}</p>
+      </div>
+      <button class="location-btn" id="changeLocBtn">📍 場所を変更</button>
+    </div>
+
+    <!-- Current -->
+    <div class="current-card">
+      <div class="weather-icon-large">${wmo(code).icon}</div>
+      <div class="temp-main">${Math.round(c.temperature_2m)}<span style="font-size:2rem;font-weight:300">°</span></div>
+      <div class="weather-desc">${wmo(code).label}</div>
+      <div class="feels-like">体感 ${Math.round(c.apparent_temperature)}°</div>
+      <div class="temp-range">↑${Math.round(daily.temperature_2m_max[0])}°　↓${Math.round(daily.temperature_2m_min[0])}°</div>
+    </div>
+
+    <!-- Details -->
+    <div class="details-grid">
+      <div class="detail-card">
+        <div class="detail-icon">💧</div>
+        <div class="detail-label">湿度</div>
+        <div><span class="detail-value">${c.relative_humidity_2m}</span><span class="detail-unit"> %</span></div>
+      </div>
+      <div class="detail-card">
+        <div class="detail-icon">💨</div>
+        <div class="detail-label">風速・風向</div>
+        <div><span class="detail-value">${c.wind_speed_10m.toFixed(1)}</span><span class="detail-unit"> m/s</span></div>
+        <div style="font-size:0.75rem;color:var(--text-sub);font-family:'Montserrat',sans-serif;font-weight:300">${directionLabel(c.wind_direction_10m)}</div>
+      </div>
+      <div class="detail-card">
+        <div class="detail-icon">🌂</div>
+        <div class="detail-label">降水量</div>
+        <div><span class="detail-value">${c.precipitation.toFixed(1)}</span><span class="detail-unit"> mm</span></div>
+      </div>
+      <div class="detail-card">
+        <div class="detail-icon">☀️</div>
+        <div class="detail-label">UV指数</div>
+        <div><span class="detail-value">${Math.round(c.uv_index)}</span></div>
+        <div style="font-size:0.75rem;color:var(--text-sub);font-family:'Montserrat',sans-serif;font-weight:300">${getUVLabel(c.uv_index)}</div>
+      </div>
+    </div>
+
+    <!-- Hourly -->
+    <div class="hourly-wrap">
+      <div class="section-title" style="margin-bottom:8px">時間ごとの予報</div>
+      <div class="hourly-scroll">
+        ${hourly.time.slice(startIdx, startIdx + 24).map((t, i) => {
+          const absIdx = startIdx + i;
+          const isNow = absIdx === nowIdx || (i === 0 && nowIdx === 0);
+          const hCode = hourly.weather_code[absIdx];
+          const hTemp = hourly.temperature_2m[absIdx];
+          const hPrec = hourly.precipitation_probability[absIdx];
+          return `<div class="hourly-item${isNow ? ' now' : ''}">
+            <div class="hourly-time">${isNow ? '今' : formatHour(t)}</div>
+            <div class="hourly-icon">${wmo(hCode).icon}</div>
+            <div class="hourly-temp">${Math.round(hTemp)}°</div>
+            ${hPrec > 0 ? `<div style="font-size:0.65rem;color:#7ec8e3;font-family:'Montserrat',sans-serif">${hPrec}%</div>` : ''}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <!-- Weekly -->
+    <div class="weekly-wrap">
+      <div class="section-title" style="margin-bottom:8px">週間予報</div>
+      <div class="weekly-card">
+        ${daily.time.map((d, i) => {
+          const dCode = daily.weather_code[i];
+          const dMax = Math.round(daily.temperature_2m_max[i]);
+          const dMin = Math.round(daily.temperature_2m_min[i]);
+          const dPrec = daily.precipitation_probability_max[i];
+          const label = i === 0 ? '今日' : i === 1 ? '明日' : formatDate(d);
+          return `<div class="weekly-row">
+            <div class="weekly-day">${label}</div>
+            <div class="weekly-icon">${wmo(dCode).icon}</div>
+            <div class="weekly-precip">${dPrec > 0 ? dPrec+'%' : ''}</div>
+            <div class="weekly-temps">
+              <span class="temp-high">${dMax}°</span>
+              <span class="temp-low">${dMin}°</span>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+
+  document.getElementById('changeLocBtn').addEventListener('click', openModal);
+}
+
+// ===== LOCATION =====
+function startWithGeo() {
+  document.querySelector('.loading p').textContent = '位置情報を取得中...';
+  navigator.geolocation.getCurrentPosition(
+    async pos => {
+      try {
+        const { latitude: lat, longitude: lon } = pos.coords;
+        // Reverse geocode via open-meteo geocoding (use nominatim fallback)
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=ja`);
+        const geo = await res.json();
+        const city = geo.address?.city || geo.address?.town || geo.address?.village || geo.address?.county || '現在地';
+        const pref = geo.address?.state || '';
+        const name = pref ? `${city}、${pref}` : city;
+        setCookie('wx_lat', lat, 30);
+        setCookie('wx_lon', lon, 30);
+        setCookie('wx_name', name, 30);
+        await fetchWeather(lat, lon, name);
+      } catch(e) {
+        showError('天気データの取得に失敗しました。場所を選択してください。');
+      }
+    },
+    () => {
+      // Fallback: Tokyo
+      loadSaved() || loadDefault();
+    }
+  );
+}
+
+function loadSaved() {
+  const lat = getCookie('wx_lat');
+  const lon = getCookie('wx_lon');
+  const name = getCookie('wx_name');
+  if (lat && lon && name) {
+    fetchWeather(parseFloat(lat), parseFloat(lon), name).catch(() => showError('天気データの取得に失敗しました。'));
+    return true;
+  }
+  return false;
+}
+
+function loadDefault() {
+  // Default: Tokyo
+  fetchWeather(35.6895, 139.6917, '東京').catch(() => showError('天気データの取得に失敗しました。'));
+}
+
+function showError(msg) {
+  document.getElementById('app').innerHTML = `<div class="error-msg">${msg}<br><br><button class="location-btn" onclick="openModal()" style="margin:auto;display:block">場所を選択する</button></div>`;
+  applyTheme(THEMES.clearDay);
+}
+
+// ===== MODAL =====
+function openModal() {
+  document.getElementById('modalOverlay').classList.add('open');
+  document.getElementById('cityInput').value = '';
+}
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+document.getElementById('geoBtn').addEventListener('click', () => {
+  closeModal();
+  startWithGeo();
+});
+
+document.getElementById('searchBtn').addEventListener('click', async () => {
+  const city = document.getElementById('cityInput').value.trim();
+  if (!city) return;
+  closeModal();
+  document.getElementById('app').innerHTML = `<div class="loading"><div class="loading-spinner"></div><p>検索中...</p></div>`;
+  try {
+    const { lat, lon, name } = await geocodeCity(city);
+    setCookie('wx_lat', lat, 30);
+    setCookie('wx_lon', lon, 30);
+    setCookie('wx_name', name, 30);
+    await fetchWeather(lat, lon, name);
+  } catch(e) {
+    showError('都市が見つかりませんでした。別の名前で試してください。');
+  }
+});
+
+document.getElementById('cityInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('searchBtn').click();
+});
+
+document.getElementById('modalClose').addEventListener('click', closeModal);
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+});
+
+// ===== INIT =====
+if (loadSaved()) {
+  // cookie found — already loading
+} else if (navigator.geolocation) {
+  startWithGeo();
+} else {
+  loadDefault();
+}
+</script>
+</body>
+</html>
