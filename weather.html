@@ -211,9 +211,9 @@
     line-height: 1.2;
   }
   .location-info p {
-    font-size: 0.78rem; color: var(--text-sub);
+    font-size: 1rem;
     margin-top: 3px;
-    font-family: 'Montserrat', sans-serif; font-weight: 300;
+	font-weight: 700;
   }
   .location-btn {
     background: var(--card-bg);
@@ -870,7 +870,7 @@ function startWithGeo() {
         setCookie('wx_name', name, 30);
         await fetchWeather(lat, lon, name);
       } catch(e) {
-        showError('天気データの取得に失敗しました。場所を選択してください。');
+        showError('天気データの取得に失敗しました。<br />場所を選択してください。');
       }
     },
     () => {
@@ -927,7 +927,7 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
     setCookie('wx_name', name, 30);
     await fetchWeather(lat, lon, name);
   } catch(e) {
-    showError('都市が見つかりませんでした。別の名前で試してください。');
+    showError('都市が見つかりませんでした。<br />別の地名で試してください。');
   }
 });
 
