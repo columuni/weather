@@ -195,10 +195,25 @@
   #app {
     position: relative; z-index: 10;
     min-height: 100vh;
-    max-width: 480px;
+    max-width: 900px;
     margin: 0 auto;
     padding: 0 20px 40px;
     display: flex; flex-direction: column; gap: 20px;
+  }
+
+  /* 2-column layout for hourly + weekly */
+  .forecast-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  .forecast-row > * { min-width: 0; }
+  @media (max-width: 600px) {
+    .forecast-row {
+      grid-template-columns: 1fr;
+    }
+    #app { max-width: 480px; }
   }
 
   /* Header */
@@ -253,7 +268,7 @@
     line-height: 1; letter-spacing: -0.03em;
   }
   .weather-desc {
-    font-size: 1rem; color: var(--text-sub);
+    font-size: 2rem; color: var(--text-sub);
     font-weight: 300; margin-top: 4px;
   }
   .feels-like {
@@ -279,7 +294,7 @@
   }
   .detail-card {
     padding: 20px 20px;
-    display: flex; flex-direction: column; gap: 6px;
+    display: flex; flex-direction: column; gap: 8px;
   }
   .detail-label {
     font-size: 0.72rem; color: var(--text-sub);
@@ -313,11 +328,12 @@
     overflow-x: auto;
     scrollbar-width: none;
     animation: fadeUp 0.8s 0.2s ease both;
+	min-height: 150px;
   }
   .hourly-scroll::-webkit-scrollbar { display: none; }
   .hourly-item {
     display: flex; flex-direction: column; align-items: center;
-    gap: 6px;
+    gap: 7px;
     padding: 10px 10px;
     border-radius: 14px;
     min-width: 54px;
@@ -332,10 +348,10 @@
     font-family: 'Montserrat', sans-serif; font-weight: 300;
     white-space: nowrap;
   }
-  .hourly-icon { font-size: 1.3rem; }
+  .hourly-icon { font-size: 1.25rem; }
   .hourly-temp {
     font-family: 'Montserrat', sans-serif;
-    font-size: 0.88rem; font-weight: 400;
+    font-size: 0.85rem; font-weight: 400;
   }
 
   /* Weekly forecast */
@@ -346,10 +362,11 @@
     border-radius: 20px;
     overflow: hidden;
     animation: fadeUp 0.8s 0.3s ease both;
+	min-height: 150px;
   }
   .weekly-row {
     display: flex; align-items: center;
-    padding: 14px 20px;
+    padding: 8px 20px;
     border-bottom: 1px solid var(--card-border);
     transition: background 0.2s;
   }
@@ -360,7 +377,7 @@
   }
   .weekly-icon { font-size: 1.4rem; flex: 0 0 36px; text-align: center; }
   .weekly-precip {
-    font-size: 0.72rem; color: #7ec8e3;
+    font-size: 0.8rem; color: #7ec8e3;
     font-family: 'Montserrat', sans-serif;
     flex: 0 0 38px; text-align: center;
   }
@@ -462,9 +479,9 @@
   @media (min-width: 640px) {
     #app { max-width: 560px; }
     .details-grid { grid-template-columns: repeat(4, 1fr); }
-    .detail-value { font-size: 2rem; }
-    .temp-main { font-size: 6.5rem; }
-    .weather-icon-large { font-size: 5.5rem; }
+    .detail-value { font-size: 3rem; }
+    .temp-main { font-size: 8rem; }
+    .weather-icon-large { font-size: 8rem; }
   }
 
   @media (min-width: 1024px) {
@@ -479,8 +496,12 @@
     .header { grid-column: 1 / -1; padding-top: 60px; }
     .current-card { grid-column: 1; }
     .details-grid { grid-column: 2; grid-template-columns: 1fr 1fr; align-content: start; }
-    .hourly-wrap { grid-column: 1 / -1; }
-    .weekly-wrap { grid-column: 1 / -1; }
+    .forecast-row { grid-column: 1 / -1; }
+  }
+
+  /* Home Link */
+  .home-link, .home-link a {
+    color: var(--text-sub);
   }
 </style>
 </head>
@@ -766,6 +787,9 @@ function renderWeather(data, locationName) {
       <div class="location-info">
         <h1>${locationName}</h1>
         <p>${now.getMonth()+1}月${now.getDate()}日（${DAYS[now.getDay()]}）${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}</p>
+		<div class="home-link">
+		  <a href="https://columuni.com">@columuni</a> / <a href="https://github.com/columuni/weather">GitHub</a>
+		</div>
       </div>
       <button class="location-btn" id="changeLocBtn">📍 場所を変更</button>
     </div>
@@ -781,6 +805,11 @@ function renderWeather(data, locationName) {
 
     <!-- Details -->
     <div class="details-grid">
+	  <div class="detail-card">
+        <div class="detail-icon">🌂</div>
+        <div class="detail-label">降水量</div>
+        <div><span class="detail-value">${c.precipitation.toFixed(1)}</span><span class="detail-unit"> mm</span></div>
+      </div>
       <div class="detail-card">
         <div class="detail-icon">💧</div>
         <div class="detail-label">湿度</div>
@@ -793,11 +822,6 @@ function renderWeather(data, locationName) {
         <div style="font-size:0.75rem;color:var(--text-sub);font-family:'Montserrat',sans-serif;font-weight:300">${directionLabel(c.wind_direction_10m)}</div>
       </div>
       <div class="detail-card">
-        <div class="detail-icon">🌂</div>
-        <div class="detail-label">降水量</div>
-        <div><span class="detail-value">${c.precipitation.toFixed(1)}</span><span class="detail-unit"> mm</span></div>
-      </div>
-      <div class="detail-card">
         <div class="detail-icon">☀️</div>
         <div class="detail-label">UV指数</div>
         <div><span class="detail-value">${Math.round(c.uv_index)}</span></div>
@@ -805,46 +829,49 @@ function renderWeather(data, locationName) {
       </div>
     </div>
 
-    <!-- Hourly -->
-    <div class="hourly-wrap">
-      <div class="section-title" style="margin-bottom:8px">時間ごとの予報</div>
-      <div class="hourly-scroll">
-        ${hourly.time.slice(startIdx, startIdx + 24).map((t, i) => {
-          const absIdx = startIdx + i;
-          const isNow = absIdx === nowIdx || (i === 0 && nowIdx === 0);
-          const hCode = hourly.weather_code[absIdx];
-          const hTemp = hourly.temperature_2m[absIdx];
-          const hPrec = hourly.precipitation_probability[absIdx];
-          return `<div class="hourly-item${isNow ? ' now' : ''}">
-            <div class="hourly-time">${isNow ? '今' : formatHour(t)}</div>
-            <div class="hourly-icon">${wmo(hCode).icon}</div>
-            <div class="hourly-temp">${Math.round(hTemp)}°</div>
-            ${hPrec > 0 ? `<div style="font-size:0.65rem;color:#7ec8e3;font-family:'Montserrat',sans-serif">${hPrec}%</div>` : ''}
-          </div>`;
-        }).join('')}
+    <!-- Hourly + Weekly 2-column -->
+    <div class="forecast-row">
+      <!-- Hourly -->
+      <div class="hourly-wrap">
+        <div class="section-title" style="margin-bottom:8px">時間ごとの予報</div>
+        <div class="hourly-scroll">
+          ${hourly.time.slice(startIdx, startIdx + 24).map((t, i) => {
+            const absIdx = startIdx + i;
+            const isNow = absIdx === nowIdx || (i === 0 && nowIdx === 0);
+            const hCode = hourly.weather_code[absIdx];
+            const hTemp = hourly.temperature_2m[absIdx];
+            const hPrec = hourly.precipitation_probability[absIdx];
+            return `<div class="hourly-item${isNow ? ' now' : ''}">
+              <div class="hourly-time">${isNow ? '今' : formatHour(t)}</div>
+              <div class="hourly-icon">${wmo(hCode).icon}</div>
+              <div class="hourly-temp">${Math.round(hTemp)}°</div>
+              ${hPrec > 0 ? `<div style="font-size:0.7rem;color:#7ec8e3;font-family:'Montserrat',sans-serif">${hPrec}%</div>` : ''}
+            </div>`;
+          }).join('')}
+        </div>
       </div>
-    </div>
 
-    <!-- Weekly -->
-    <div class="weekly-wrap">
-      <div class="section-title" style="margin-bottom:8px">週間予報</div>
-      <div class="weekly-card">
-        ${daily.time.map((d, i) => {
-          const dCode = daily.weather_code[i];
-          const dMax = Math.round(daily.temperature_2m_max[i]);
-          const dMin = Math.round(daily.temperature_2m_min[i]);
-          const dPrec = daily.precipitation_probability_max[i];
-          const label = i === 0 ? '今日' : i === 1 ? '明日' : formatDate(d);
-          return `<div class="weekly-row">
-            <div class="weekly-day">${label}</div>
-            <div class="weekly-icon">${wmo(dCode).icon}</div>
-            <div class="weekly-precip">${dPrec > 0 ? dPrec+'%' : ''}</div>
-            <div class="weekly-temps">
-              <span class="temp-high">${dMax}°</span>
-              <span class="temp-low">${dMin}°</span>
-            </div>
-          </div>`;
-        }).join('')}
+      <!-- Weekly (today / tomorrow / day after) -->
+      <div class="weekly-wrap">
+        <div class="section-title" style="margin-bottom:8px">3日間の予報</div>
+        <div class="weekly-card">
+          ${daily.time.slice(0, 3).map((d, i) => {
+            const dCode = daily.weather_code[i];
+            const dMax = Math.round(daily.temperature_2m_max[i]);
+            const dMin = Math.round(daily.temperature_2m_min[i]);
+            const dPrec = daily.precipitation_probability_max[i];
+            const label = i === 0 ? '今日' : i === 1 ? '明日' : '明後日';
+            return `<div class="weekly-row">
+              <div class="weekly-day">${label}</div>
+              <div class="weekly-icon">${wmo(dCode).icon}</div>
+              <div class="weekly-precip">${dPrec > 0 ? dPrec+'%' : ''}</div>
+              <div class="weekly-temps">
+                <span class="temp-high">${dMax}°</span>
+                <span class="temp-low">${dMin}°</span>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
       </div>
     </div>
   `;
