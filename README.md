@@ -15,7 +15,8 @@
 HTMLファイルをそのままブラウザーで開けば表示される。
 
 ## サンプル
-[ここ](https://columuni.com/weather/index.html)
+* [https://columuni.github.io/weather/index.html](https://columuni.github.io/weather/index.html)
+* [https://columuni.com/weather/index.html](https://columuni.com/weather/index.html)
 
 ## 補足
 * ゴールデンウィークの自由工作。
