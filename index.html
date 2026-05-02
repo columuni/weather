@@ -705,6 +705,7 @@ generateSnow();
 
 // ===== DATE/TIME HELPERS =====
 const DAYS = ['日','月','火','水','木','金','土'];
+const DAYS_FULL = ['日曜日','月曜日','火曜日','水曜日','木曜日','金曜日','土曜日'];
 function formatDate(dateStr) {
   const d = new Date(dateStr);
   return `${d.getMonth()+1}月${d.getDate()}日（${DAYS[d.getDay()]}）`;
@@ -712,9 +713,7 @@ function formatDate(dateStr) {
 function formatHour(isoStr) {
   const d = new Date(isoStr);
   const h = d.getHours();
-  if (h === 0) return '深夜0時';
-  if (h === 12) return '正午';
-  return h < 12 ? `午前${h}時` : `午後${h-12}時`;
+  return `${h}時`;
 }
 function directionLabel(deg) {
   const dirs = ['北','北北東','北東','東北東','東','東南東','南東','南南東','南','南南西','南西','西南西','西','西北西','北西','北北西'];
@@ -842,7 +841,7 @@ function renderWeather(data, locationName) {
             const hTemp = hourly.temperature_2m[absIdx];
             const hPrec = hourly.precipitation_probability[absIdx];
             return `<div class="hourly-item${isNow ? ' now' : ''}">
-              <div class="hourly-time">${isNow ? '今' : formatHour(t)}</div>
+              <div class="hourly-time">${isNow ? '現在' : formatHour(t)}</div>
               <div class="hourly-icon">${wmo(hCode).icon}</div>
               <div class="hourly-temp">${Math.round(hTemp)}°</div>
               ${hPrec > 0 ? `<div style="font-size:0.7rem;color:#7ec8e3;font-family:'Montserrat',sans-serif">${hPrec}%</div>` : ''}
@@ -860,7 +859,8 @@ function renderWeather(data, locationName) {
             const dMax = Math.round(daily.temperature_2m_max[i]);
             const dMin = Math.round(daily.temperature_2m_min[i]);
             const dPrec = daily.precipitation_probability_max[i];
-            const label = i === 0 ? '今日' : i === 1 ? '明日' : '明後日';
+            const dDate = new Date(d);
+            const label = i === 0 ? '今日' : DAYS_FULL[dDate.getDay()];
             return `<div class="weekly-row">
               <div class="weekly-day">${label}</div>
               <div class="weekly-icon">${wmo(dCode).icon}</div>
