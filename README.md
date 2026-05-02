@@ -1,4 +1,4 @@
-# weather
+# かんたん天気
 自分用の天気を表示するだけのページ。
 
 ## 実装した内容
@@ -15,8 +15,8 @@
 HTMLファイルをそのままブラウザーで開けば表示される。
 
 ## サンプル
-* [https://columuni.github.io/weather/index.html](https://columuni.github.io/weather/)
-* [https://columuni.com/weather/index.html](https://columuni.com/weather/)
+* [https://columuni.github.io/weather/](https://columuni.github.io/weather/)
+* [https://columuni.com/weather/](https://columuni.com/weather/)
 
 ## 補足
 * ゴールデンウィークの自由工作。
