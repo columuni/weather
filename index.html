@@ -775,6 +775,7 @@ function renderWeather(data, locationName) {
   const hour = now.getHours();
   const theme = getTheme(code, isDay, hour);
   applyTheme(theme);
+  setFaviconEmoji(wmo(code).icon);
 
   const nowIdx = hourly.time.findIndex(t => new Date(t) >= now);
   const startIdx = Math.max(0, nowIdx - 1);
@@ -877,6 +878,25 @@ function renderWeather(data, locationName) {
   `;
 
   document.getElementById('changeLocBtn').addEventListener('click', openModal);
+}
+
+// ===== FAVICON =====
+function setFaviconEmoji(emoji) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  ctx.font = '52px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(emoji, 32, 34);
+  let link = document.querySelector("link[rel~='icon']");
+  if (!link) {
+    link = document.createElement('link');
+    link.rel = 'icon';
+    document.head.appendChild(link);
+  }
+  link.href = canvas.toDataURL('image/png');
 }
 
 // ===== LOCATION =====
